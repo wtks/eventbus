@@ -2,20 +2,20 @@ package eventbus
 
 var g = New()
 
-func Subscribe(name string, fn Handler) {
-	g.Subscribe(name, fn)
+func Subscribe(event string, fn Handler) {
+	g.Subscribe(event, fn)
 }
 
-func Unsubscribe(name string, fn Handler) bool {
-	return g.Unsubscribe(name, fn)
+func Unsubscribe(event string, fn Handler) bool {
+	return g.Unsubscribe(event, fn)
 }
 
-func UnsubscribeAll(name string) {
-	g.UnsubscribeAll(name)
+func UnsubscribeAll(event string) {
+	g.UnsubscribeAll(event)
 }
 
-func Publish(name string, args ...interface{}) {
-	g.Publish(name, args...)
+func Publish(event string, args ...interface{}) {
+	g.Publish(event, args...)
 }
 
 func WaitAll() {

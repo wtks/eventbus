@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type Handler func(name string, time time.Time, args ...interface{})
+type Handler func(event string, time time.Time, args ...interface{})
 
 type EventBus struct {
 	handlers map[string][]Handler
@@ -22,25 +22,25 @@ func New() *EventBus {
 	}
 }
 
-func (bus *EventBus) Subscribe(name string, fn Handler) {
+func (bus *EventBus) Subscribe(event string, fn Handler) {
 	bus.m.Lock()
 	defer bus.m.Unlock()
 
-	bus.handlers[name] = append(bus.handlers[name], fn)
+	bus.handlers[event] = append(bus.handlers[event], fn)
 }
 
-func (bus *EventBus) Unsubscribe(name string, fn Handler) bool {
+func (bus *EventBus) Unsubscribe(event string, fn Handler) bool {
 	bus.m.Lock()
 	defer bus.m.Unlock()
 
 	target := reflect.ValueOf(fn)
-	if hs, ok := bus.handlers[name]; ok {
+	if hs, ok := bus.handlers[event]; ok {
 		for i, h := range hs {
 			if reflect.ValueOf(h) == target {
-				l := len(bus.handlers[name])
-				copy(bus.handlers[name][i:], bus.handlers[name][i+1:])
-				bus.handlers[name][l-1] = nil
-				bus.handlers[name] = bus.handlers[name][:l-1]
+				l := len(bus.handlers[event])
+				copy(bus.handlers[event][i:], bus.handlers[event][i+1:])
+				bus.handlers[event][l-1] = nil
+				bus.handlers[event] = bus.handlers[event][:l-1]
 				return true
 			}
 		}
@@ -48,29 +48,29 @@ func (bus *EventBus) Unsubscribe(name string, fn Handler) bool {
 	return false
 }
 
-func (bus *EventBus) UnsubscribeAll(name string) {
+func (bus *EventBus) UnsubscribeAll(event string) {
 	bus.m.Lock()
 	defer bus.m.Unlock()
 
-	bus.handlers[name] = make([]Handler, 0)
+	bus.handlers[event] = make([]Handler, 0)
 }
 
-func (bus *EventBus) Publish(name string, args ...interface{}) {
+func (bus *EventBus) Publish(event string, args ...interface{}) {
 	bus.m.RLock()
 	defer bus.m.RUnlock()
 
 	now := time.Now()
-	if hs, ok := bus.handlers[name]; ok && len(hs) > 0 {
+	if hs, ok := bus.handlers[event]; ok && len(hs) > 0 {
 		for _, h := range hs {
 			bus.wg.Add(1)
-			go bus.publish(h, name, now, args...)
+			go bus.publish(h, event, now, args...)
 		}
 	}
 }
 
-func (bus *EventBus) publish(fn Handler, name string, time time.Time, args ...interface{}) {
+func (bus *EventBus) publish(fn Handler, event string, time time.Time, args ...interface{}) {
 	defer bus.wg.Done()
-	fn(name, time, args...)
+	fn(event, time, args...)
 }
 
 func (bus *EventBus) WaitAll() {
